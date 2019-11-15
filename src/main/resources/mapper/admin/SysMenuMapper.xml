@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.z.admin.mapper.ISysMenuMapper">
+
+    <resultMap type="SysMenu" id="SysMenuResult">
+        <id column="menu_id" property="menuId"/>
+        <result column="menu_name" property="menuName"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="order_num" property="orderNum"/>
+        <result column="url" property="url"/>
+        <result column="menu_type" property="menuType"/>
+        <result column="permissions" property="permissions"/>
+        <result column="icon" property="icon"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="status" property="status"/>
+    </resultMap>
+
+    <sql id="whereCondition">
+        <where>
+            <if test="menuId != '' and menuId != null">and menu_id = #{menuId}</if>
+            <if test="menuName != '' and menuName != null">and menu_name = #{menuName}</if>
+            <if test="parentId != '' and parentId != null">and parent_id = #{parentId}</if>
+            <if test="orderNum != '' and orderNum != null">and order_num = #{orderNum}</if>
+            <if test="url != '' and url != null">and url = #{url}</if>
+            <if test="menuType != '' and menuType != null">and menu_type = #{menuType}</if>
+            <if test="permissions != '' and permissions != null">and permissions = #{permissions}</if>
+            <if test="icon != '' and icon != null">and icon = #{icon}</if>
+            <if test="createBy != '' and createBy != null">and create_by = #{createBy}</if>
+            <if test="createTime != '' and createTime != null">and create_time = #{createTime}</if>
+            <if test="updateBy != '' and updateBy != null">and update_by = #{updateBy}</if>
+            <if test="updateTime != '' and updateTime != null">and update_time = #{updateTime}</if>
+            <if test="status != '' and status != null">and status = #{status}</if>
+        </where>
+    </sql>
+
+    <sql id="selectSQL">
+        select
+            menu_id,
+            menu_name,
+            parent_id,
+            order_num,
+            url,
+            menu_type,
+            permissions,
+            icon,
+            create_by,
+            create_time,
+            update_by,
+            update_time,
+            status
+        from sys_menu
+    </sql>
+
+    <select id="selectMenu" parameterType="SysRole" resultMap="SysMenuResult">
+        <include refid="selectSQL"/>
+        <include refid="whereCondition"/>
+    </select>
+
+    <delete id="deleteRole" parameterType="Long">
+        delete from sys_menu
+        <include refid="whereCondition"/>
+    </delete>
+
+    <update id="updateMenu" parameterType="SysRole">
+        update sys_menu
+        <set>
+            <if test="menuId != '' and menuId != null">menu_id = #{menuId},</if>
+            <if test="menuName != '' and menuName != null">menu_name = #{menuName},</if>
+            <if test="parentId != '' and parentId != null">parent_id = #{parentId},</if>
+            <if test="orderNum != '' and orderNum != null">order_num = #{orderNum},</if>
+            <if test="url != '' and url != null">url = #{url},</if>
+            <if test="menuType != '' and menuType != null">menu_type = #{menuType},</if>
+            <if test="permissions != '' and permissions != null">permissions = #{permissions},</if>
+            <if test="icon != '' and icon != null">icon = #{icon},</if>
+            <if test="createBy != '' and createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != '' and createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != '' and updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != '' and updateTime != null">update_time = #{updateTime},</if>
+            <if test="status != '' and status != null">status = #{status},</if>
+        </set>
+        <include refid="whereCondition"/>
+    </update>
+
+    <insert id="insertMenu" parameterType="SysRole" useGeneratedKeys="true" keyProperty="roleId">
+        insert into sys_menu
+        <trim prefix=" ( " suffix=" ) " suffixOverrides=",">
+            <if test="menuId != '' and menuId != null">menu_id,</if>
+            <if test="menuName != '' and menuName != null">menu_name,</if>
+            <if test="parentId != '' and parentId != null">parent_id,</if>
+            <if test="orderNum != '' and orderNum != null">order_num,</if>
+            <if test="url != '' and url != null">url,</if>
+            <if test="menuType != '' and menuType != null">menu_type,</if>
+            <if test="permissions != '' and permissions != null">permissions,</if>
+            <if test="icon != '' and icon != null">icon,</if>
+            <if test="createBy != '' and createBy != null">create_by,</if>
+            <if test="createTime != '' and createTime != null">create_time,</if>
+            <if test="updateBy != '' and updateBy != null">update_by,</if>
+            <if test="updateTime != '' and updateTime != null">update_time,</if>
+            <if test="status != '' and status != null">status,</if>
+        </trim>
+        values
+        <trim prefix=" ( " suffix=" ) " suffixOverrides=",">
+            <if test="menuId != '' and menuId != null">#{menuId},</if>
+            <if test="menuName != '' and menuName != null">#{menuName},</if>
+            <if test="parentId != '' and parentId != null">#{parentId},</if>
+            <if test="orderNum != '' and orderNum != null">#{orderNum},</if>
+            <if test="url != '' and url != null">#{url},</if>
+            <if test="menuType != '' and menuType != null">#{menuType},</if>
+            <if test="permissions != '' and permissions != null">#{permissions},</if>
+            <if test="icon != '' and icon != null">#{icon},</if>
+            <if test="createBy != '' and createBy != null">#{createBy},</if>
+            <if test="createTime != '' and createTime != null">#{createTime},</if>
+            <if test="updateBy != '' and updateBy != null">#{updateBy},</if>
+            <if test="updateTime != '' and updateTime != null">#{updateTime},</if>
+            <if test="status != '' and status != null">#{status},</if>
+        </trim>
+    </insert>
+
+    <select id="selectPermissionsByUserId" parameterType="long" resultType="string">
+		select distinct m.permissions from sys_menu m
+        left join sys_role_menu rm on m.menu_id = rm.menu_id
+        left join sys_user_role ur on rm.role_id = ur.role_id
+        where ur.user_id = #{userId}
+    </select>
+
+</mapper>

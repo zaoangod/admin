@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="renderer" content="webkit">
+    <title>登录页面</title>
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+</head>
+<body>
+登录页面
+<input id="token" name="token" type="hidden">
+<form action="/admin/login" method="post">
+    <input id="username" name="username" value="123" type="text">
+    <input id="password" name="password" value="qwe" type="password">
+    <input type="button" onclick="login();" value="登录">
+    <input type="button" onclick="test();" value="测试">
+</form>
+<script>
+    function login() {
+        $.ajax({
+            type: "POST",
+            url: "/admin/login",
+            dataType: "json",
+            data: {
+                username: $("#username").val(),
+                password: $("#password").val()
+            },
+            success: function (data) {
+                console.log(data);
+                $('#token').val(data.data);
+            },
+            error: function (e) {
+                console.log(e);
+            }
+        });
+    }
+
+    function test() {
+        $.ajax({
+            type: "POST",
+            url: "/admin/SysUser/list",
+            dataType: "json",
+            headers: {
+                "Authorization": $('#token').val()
+            },
+            data: {},
+            success: function (data) {
+                console.log(data);
+            },
+            error: function (e) {
+                console.log(e);
+            }
+        });
+    }
+</script>
+</body>
+</html>

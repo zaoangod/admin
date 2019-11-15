@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.z.admin.mapper.ISysRoleMapper">
+
+    <resultMap type="SysRole" id="SysRoleResult">
+        <id column="role_id" property="roleId"/>
+        <result column="role_name" property="roleName"/>
+        <result column="role_key" property="roleKey"/>
+        <result column="role_sort" property="roleSort"/>
+        <result column="data_scope" property="dataScope"/>
+        <result column="status" property="status"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <sql id="whereCondition">
+        <where>
+            <if test="roleName != '' and roleName != null">
+                and role_name = #{roleName}
+            </if>
+            <if test="roleKey != '' and roleKey != null">
+                and role_key = #{roleKey}
+            </if>
+            <if test="roleSort != '' and roleSort != null">
+                and role_sort = #{roleSort}
+            </if>
+            <if test="dataScope != '' and dataScope != null">
+                and data_scope = #{dataScope}
+            </if>
+            <if test="status != '' and status != null">
+                and status = #{status}
+            </if>
+            <if test="createBy != '' and createBy != null">
+                and create_by = #{createBy}
+            </if>
+            <if test="createTime != '' and createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateBy != '' and updateBy != null">
+                and update_by = #{updateBy}
+            </if>
+            <if test="updateTime != '' and updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+            <if test="remark != '' and remark != null">
+                and remark = #{remark}
+            </if>
+        </where>
+    </sql>
+
+    <sql id="selectSQL">
+        select
+            role_name,
+            role_key,
+            role_sort,
+            data_scope,
+            status,
+            create_by,
+            create_time,
+            update_by,
+            update_time,
+            remark
+        from sys_role
+    </sql>
+
+    <select id="selectRole" parameterType="SysRole" resultMap="SysRoleResult">
+        <include refid="selectSQL"/>
+        <include refid="whereCondition"/>
+    </select>
+
+    <delete id="deleteRole" parameterType="Long">
+        delete from sys_role
+        <include refid="whereCondition"/>
+    </delete>
+
+    <update id="updateRole" parameterType="SysRole">
+        update sys_role
+        <set>
+            <if test="roleName != '' and roleName != null">role_name = #{roleName},</if>
+            <if test="roleKey != '' and roleKey != null">role_key = #{roleKey},</if>
+            <if test="roleSort != '' and roleSort != null">role_sort = #{roleSort},</if>
+            <if test="dataScope != '' and dataScope != null">data_scope = #{dataScope},</if>
+            <if test="status != '' and status != null">status = #{status},</if>
+            <if test="createBy != '' and createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != '' and createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != '' and updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != '' and updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != '' and remark != null">remark = #{remark},</if>
+        </set>
+        <include refid="whereCondition"/>
+    </update>
+
+    <insert id="insertRole" parameterType="SysRole" useGeneratedKeys="true" keyProperty="roleId">
+        insert into sys_role
+        <trim prefix=" ( " suffix=" ) " suffixOverrides=",">
+            <if test="roleName != '' and roleName != null">role_name,</if>
+            <if test="roleKey != '' and roleKey != null">role_key,</if>
+            <if test="roleSort != '' and roleSort != null">role_sort,</if>
+            <if test="dataScope != '' and dataScope != null">data_scope,</if>
+            <if test="status != '' and status != null">status,</if>
+            <if test="createBy != '' and createBy != null">create_by,</if>
+            <if test="createTime != '' and createTime != null">create_time,</if>
+            <if test="updateBy != '' and updateBy != null">update_by,</if>
+            <if test="updateTime != '' and updateTime != null">update_time,</if>
+            <if test="remark != '' and remark != null">remark,</if>
+        </trim>
+        values
+        <trim prefix=" ( " suffix=" ) " suffixOverrides=",">
+            <if test="roleName != '' and roleName != null">#{roleName},</if>
+            <if test="roleKey != '' and roleKey != null">#{roleKey},</if>
+            <if test="roleSort != '' and roleSort != null">#{roleSort},</if>
+            <if test="dataScope != '' and dataScope != null">#{dataScope},</if>
+            <if test="status != '' and status != null">#{status},</if>
+            <if test="createBy != '' and createBy != null">#{createBy},</if>
+            <if test="createTime != '' and createTime != null">#{createTime},</if>
+            <if test="updateBy != '' and updateBy != null">#{updateBy},</if>
+            <if test="updateTime != '' and updateTime != null">#{updateTime},</if>
+            <if test="remark != '' and remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <select id="selectRoleKeyByUserId" parameterType="long" resultType="String">
+        select role_id from sys_user_role a
+        left join sys_role b on a.role_id = b.role_id
+        where user_id = #{userId}
+    </select>
+
+</mapper>
