@@ -1,9 +1,7 @@
-package com.z.admin.config.jwt;
+package com.z.admin.config.shiro.jwt;
 
 import com.alibaba.fastjson.JSON;
-import com.auth0.jwt.exceptions.SignatureVerificationException;
-import com.auth0.jwt.exceptions.TokenExpiredException;
-import com.z.admin.config.authentication.Constant;
+import com.z.admin.config.shiro.Constant;
 import com.z.admin.util.EhCacheUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.web.filter.authc.BasicHttpAuthenticationFilter;
@@ -62,49 +60,30 @@ public class JwtFilter extends BasicHttpAuthenticationFilter {
         String requestURI = httpServletRequest.getRequestURI();
         // 获取当前请求类型
         String httpMethod = httpServletRequest.getMethod();
+        log.info("请求类型: [{}], 请求地址: [{}]", httpMethod, requestURI);
         // 查看当前 Header 中是否携带 Authorization 属性 Token, 有的话就进行登录认证授权
-        // 没有携带 Token
-        if (isLoginAttempt(request, response)) {
-            log.info("请求类型: [{}], 请求地址: [{}]", httpMethod, requestURI);
-            try {
-                // 进行 Shiro 的登录 UserRealm
-                this.executeLogin(request, response);
-            } catch (Exception e) {
-                String    msg       = e.getMessage();
-                Throwable throwable = e.getCause();
-                if (throwable instanceof SignatureVerificationException) {
-                    // 该异常为 JWT 的 AccessToken 认证失败(Token或者密钥不正确)
-                    msg = "Token 或者密钥不正确(" + throwable.getMessage() + ")";
-                } else if (throwable instanceof TokenExpiredException) {
-                    // 该异常为 JWT 的 AccessToken 已过期, 判断 RefreshToken 未过期就进行 AccessToken 刷新
-                    if (this.refreshToken(request, response)) {
-                        return true;
-                    } else {
-                        msg = "Token 已过期(" + throwable.getMessage() + ")";
-                    }
-                } else {
-                    // 应用异常不为空
-                    if (throwable != null) {
-                        // 获取应用异常 msg
-                        msg = throwable.getMessage();
-                    }
-                }
-                log.info("=>> Shiro 登录异常信息: {}", msg);
-                // Token认证失败直接返回Response信息
-                this.response401(response, msg);
-                return false;
-            }
-        } else {
-            // 没有携带 Token
-            log.info("请求类型: [{}], 请求地址: [{}], Authorization(Token) 为空", httpMethod, requestURI);
-            // mustLoginFlag = true 开启任何请求必须登录才可访问
-            Boolean mustLoginFlag = false;
-            if (mustLoginFlag) {
-                this.response401(response, "请先登录");
-                return false;
-            }
+        boolean loginAttempt = isLoginAttempt(request, response);
+        log.info("->> {}", loginAttempt);
+        if (loginAttempt) {
+            return this.executeLogin(request, response);
         }
-        return true;
+        // 返回 false 会执行 onAccessDenied 方法
+        return false;
+    }
+
+    /**
+     * onAccessDenied: 表示当访问拒绝时是否已经处理了;
+     * 如果返回 true 表示需要继续处理;
+     * 如果返回 false 表示该拦截器实例已经处理了, 将直接返回即可
+     */
+    @Override
+    protected boolean onAccessDenied(ServletRequest servletRequest, ServletResponse servletResponse) throws Exception {
+        // log.info("当 isAccessAllowed 返回 false 的时候，才会执行 method onAccessDenied ");
+        HttpServletRequest  request  = (HttpServletRequest) servletRequest;
+        HttpServletResponse response = (HttpServletResponse) servletResponse;
+        response.sendRedirect(request.getContextPath() + "/common/401");
+        // 返回 false 表示已经处理，例如页面跳转啥的，表示不在走以下的拦截器了（如果还有配置的话）
+        return false;
     }
 
     /**
@@ -113,10 +92,10 @@ public class JwtFilter extends BasicHttpAuthenticationFilter {
      */
     @Override
     protected boolean isLoginAttempt(ServletRequest request, ServletResponse response) {
-        // 拿到当前Header中Authorization的AccessToken(Shiro 中 getAuthzHeader 方法已经实现)
-        String token = this.getAuthzHeader(request);
-        log.debug("=>> isLoginAttempt > Token: {}", token);
-        return (token != null);
+        String  token = this.getAuthzHeader(request);
+        boolean tag   = token != null && !token.equals("");
+        log.debug("=>> 判断请求 Header 中是否有 Authorization 参数: {}", tag);
+        return tag;
     }
 
     /**
@@ -124,13 +103,19 @@ public class JwtFilter extends BasicHttpAuthenticationFilter {
      */
     @Override
     protected boolean executeLogin(ServletRequest request, ServletResponse response) {
+        log.debug("=>> Execute Login...");
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         String             authorization      = httpServletRequest.getHeader("Authorization");
         log.info("=>> authorization: {}", authorization);
-        //
         JwtToken token = new JwtToken(authorization);
-        // 提交给realm进行登入，如果错误他会抛出异常并被捕获
-        getSubject(request, response).login(token);
+        try {
+            // 提交给realm进行登入，如果错误他会抛出异常并被捕获
+            getSubject(request, response).login(token);
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error(e.getMessage());
+            return false;
+        }
         // 如果没有抛出异常则代表登入成功，返回true
         return true;
     }
@@ -175,25 +160,19 @@ public class JwtFilter extends BasicHttpAuthenticationFilter {
         */
         return true;
     }
-
-    /**
-     * 无需转发，直接返回Response信息
-     */
-    private void response401(ServletResponse response, String msg) {
-        HttpServletResponse httpServletResponse = WebUtils.toHttp(response);
-        httpServletResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
-        httpServletResponse.setCharacterEncoding("UTF-8");
-        httpServletResponse.setContentType("application/json; charset=utf-8");
-        try (PrintWriter out = httpServletResponse.getWriter()) {
-            Map<String, Object> param = new HashMap<>();
-            param.put("code", "401");
-            param.put("msg", "无访问权, " + msg);
-            String data = JSON.toJSONString(param);
-            out.append(data);
+    /*@Override
+    protected boolean sendChallenge(ServletRequest request, ServletResponse response) {
+        log.debug("Authentication required: sending 401 Authentication challenge response");
+        HttpServletResponse httpResponse = WebUtils.toHttp(response);
+        httpResponse.setContentType("application/json; charset=utf-8");
+        httpResponse.setStatus(HttpStatus.UNAUTHORIZED.value());
+        try {
+            AjaxResult  result      = new AjaxResult(HttpStatus.UNAUTHORIZED.value(), "请先进行身份认证后重试");
+            PrintWriter printWriter = httpResponse.getWriter();
+            printWriter.append(JSON.toJSONString(result));
         } catch (IOException e) {
-            e.printStackTrace();
-            log.error("直接返回 Response 信息出现 IOException 异常: {}", e.getMessage());
+            log.error("sendChallenge error, can not resolve httpServletResponse");
         }
-    }
-
+        return false;
+    }*/
 }

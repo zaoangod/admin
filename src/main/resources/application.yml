@@ -29,7 +29,7 @@ spring:
 logging:
   level:
     com.z: debug
-    org.springframework: info
+    org.springframework: debug
 # mybatis
 mybatis:
   type-aliases-package: com.z.admin.model

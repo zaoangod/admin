@@ -1,6 +1,6 @@
 package com.z.admin.config.shiro;
 
-import com.z.admin.config.jwt.JwtFilter;
+import com.z.admin.config.shiro.jwt.JwtFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.cache.ehcache.EhCacheManager;
 import org.apache.shiro.mgt.DefaultSessionStorageEvaluator;
@@ -39,62 +39,40 @@ public class ShiroConfig {
         shiroFilterFactoryBean.setFilters(filters);
 
         LinkedHashMap<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
+        filterChainDefinitionMap.put("/", "anon");
+        filterChainDefinitionMap.put("/login", "anon");
+        filterChainDefinitionMap.put("/common/401", "anon");
+        filterChainDefinitionMap.put("/favicon.ico", "anon");
         // 所有请求都要经过 jwt过滤器
         filterChainDefinitionMap.put("/**", "jwt");
 
         shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap);
         return shiroFilterFactoryBean;
-        //        ShiroFilterFactoryBean shiroFilterFactoryBean = new ShiroFilterFactoryBean();
-        //        shiroFilterFactoryBean.setSecurityManager(securityManager);
-        //
-        //        // 拦截器
-        //        Map<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
-        //        //登录页面链接
-        //        //shiroFilterFactoryBean.setLoginUrl("/login");
-        //        //未授权页面链接
-        //        //shiroFilterFactoryBean.setUnauthorizedUrl("/notRole");
-        //        //shiroFilterFactoryBean.setUnauthorizedUrl("/common/403");
-        //
-        //        // 未授权界面返回JSON
-        //        shiroFilterFactoryBean.setUnauthorizedUrl("/common/403");
-        //        shiroFilterFactoryBean.setLoginUrl("/common/403");
-        //
-        //        //authc: 所有url都必须认证通过才可以访问
-        //        //anon:  所有url都都可以匿名访问
-        //        filterChainDefinitionMap.put("/**/login", "anon");
-        //        filterChainDefinitionMap.put("/**/static/**", "anon");
-        //
-        //        // 添加自己的过滤器并且取名为jwt
-        //        Map<String, Filter> filterMap = new HashMap<>(1);
-        //        filterMap.put("jwt", new JwtFilter());
-        //        shiroFilterFactoryBean.setFilters(filterMap);
-        //        // 过滤链定义, 从上向下顺序执行，一般将 /** 放在最为下边
-        //        filterChainDefinitionMap.put("/common/403", "anon");
-        //        filterChainDefinitionMap.put("/**", "jwt");
-        //        shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap);
-        //        return shiroFilterFactoryBean;
     }
 
     /**
      * 安全管理器
      */
     @Bean("securityManager")
-    public DefaultWebSecurityManager securityManager(CustomRealm customRealm) {
-        DefaultWebSecurityManager securityManager = new DefaultWebSecurityManager();
-        securityManager.setRealm(customRealm);
-        //自定义缓存实现, 使用 EhCache
-        securityManager.setCacheManager(this.ehCacheManager());
-        //关闭 shiro 自带的 session
+    public DefaultWebSecurityManager securityManager() {
+        DefaultWebSecurityManager defaultWebSecurityManager = new DefaultWebSecurityManager();
+        // 使用自定义Realm
+        defaultWebSecurityManager.setRealm(this.customRealm());
+        // 关闭Shiro自带的session
         DefaultSubjectDAO              subjectDAO                     = new DefaultSubjectDAO();
         DefaultSessionStorageEvaluator defaultSessionStorageEvaluator = new DefaultSessionStorageEvaluator();
         defaultSessionStorageEvaluator.setSessionStorageEnabled(false);
         subjectDAO.setSessionStorageEvaluator(defaultSessionStorageEvaluator);
-        securityManager.setSubjectDAO(subjectDAO);
-        return securityManager;
+        defaultWebSecurityManager.setSubjectDAO(subjectDAO);
+        // 设置自定义Cache缓存
+        defaultWebSecurityManager.setCacheManager(this.ehCacheManager());
+        return defaultWebSecurityManager;
     }
 
     /**
      * 添加注解支持
+     * 解决 spring aop 和注解配置一起使用的 bug
+     * 在 @Controller 注解的类的方法中加入 @RequiresRole 等 shiro 注解, 会导致该方法无法映射请求, 导致返回404
      */
     @Bean
     @DependsOn("lifecycleBeanPostProcessor")
@@ -120,34 +98,17 @@ public class ShiroConfig {
     }
 
     /**
-     * 添加注解支持
-     * 解决 spring aop 和注解配置一起使用的 bug
-     * 在 @Controller 注解的类的方法中加入 @RequiresRole 等 shiro 注解, 会导致该方法无法映射请求, 导致返回404
-     */
-    @Bean
-    public static DefaultAdvisorAutoProxyCreator getDefaultAdvisorAutoProxyCreator() {
-        DefaultAdvisorAutoProxyCreator defaultAdvisorAutoProxyCreator = new DefaultAdvisorAutoProxyCreator();
-        defaultAdvisorAutoProxyCreator.setUsePrefix(true);
-        return defaultAdvisorAutoProxyCreator;
-    }
-
-    /**
-     * 缓存管理器, 使用Ehcache实现
-     */
-    @Bean
-    public EhCacheManager ehCacheManager() {
-        EhCacheManager cacheManager = new EhCacheManager();
-        cacheManager.setCacheManagerConfigFile("classpath:ehcache/ehcache-shiro.xml");
-        return cacheManager;
-    }
-
-    /**
      * 自定义Realm
      */
     @Bean
-    public CustomRealm customRealm(EhCacheManager ehCacheManager) {
-        CustomRealm realm = new CustomRealm();
-        realm.setCacheManager(ehCacheManager);
-        return realm;
+    public CustomRealm customRealm() {
+        return new CustomRealm();
+    }
+
+    @Bean
+    public EhCacheManager ehCacheManager() {
+        EhCacheManager em = new EhCacheManager();
+        em.setCacheManagerConfigFile("classpath:ehcache/ehcache-shiro.xml");
+        return em;
     }
 }

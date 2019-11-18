@@ -1,5 +1,6 @@
 package com.z.admin.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +17,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * @Date: 2019-11-13 16:44
  * @Author: jy
  */
+@Slf4j
 @EnableCaching
 @Configuration
 @MapperScan({"com.z.*.mapper"})
@@ -52,6 +54,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
      */
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
+        log.info("=>> 默认访问根路径跳转: login");
         registry.addViewController("/").setViewName("login");
     }
 

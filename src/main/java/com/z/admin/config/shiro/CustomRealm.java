@@ -1,8 +1,7 @@
 package com.z.admin.config.shiro;
 
-import com.z.admin.config.authentication.Constant;
-import com.z.admin.config.jwt.JwtToken;
-import com.z.admin.config.jwt.JwtUtil;
+import com.z.admin.config.shiro.jwt.JwtToken;
+import com.z.admin.config.shiro.jwt.JwtUtil;
 import com.z.admin.model.SysUser;
 import com.z.admin.service.ISysMenuService;
 import com.z.admin.service.ISysRoleService;
@@ -88,35 +87,32 @@ public class CustomRealm extends AuthorizingRealm {
      * 身份认证
      */
     @Override
-    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authenticationToken) {
-        log.info("=>> Shiro 身份认证");
-        String token = (String) authenticationToken.getCredentials();
+    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken auth) {
+        log.debug("=>> Shiro 身份认证");
+        String token = (String) auth.getCredentials();
         log.info("=>> token: {}", token);
         if (token == null) {
             log.info("=>> Token 未获取到, 身份认证失败");
-            throw new AuthenticationException("token为空!");
+            throw new AuthenticationException("token为空");
         }
         // 解密获得 username, 用于和数据库进行对比
         String username = JwtUtil.getClaim(token, Constant.ACCOUNT);
         if (username == null) {
-            log.info("=>> Token 未获取到 UserName");
+            log.debug("=>> Token 未获取到 UserName");
             throw new AuthenticationException("token 非法无效");
         }
         log.info("=>> Token 中获取到 UserName: {}", username);
         // 查询用户信息
         SysUser user = userService.selectUser(new SysUser().setLoginName(username)).stream().findFirst().orElse(null);
         if (user == null) {
-            log.info("=>> 根据 UserName 未查询到用户信息");
+            log.debug("=>> 根据 UserName 未查询到用户信息");
             throw new AuthenticationException("用户不存在");
         }
         log.info("=>> 根据 UserName 查询到用户信息");
         //验证 token
         if (!JwtUtil.verify(token, username, user.getPassword())) {
-            log.info("=>> 用户名或者密码错误");
+            log.debug("=>> 用户名或者密码错误");
             throw new AuthenticationException("用户名或者密码错误");
-        } else {
-            token = JwtUtil.sign(username, user.getPassword());
-            log.info("=>> 新 Token: {}", token);
         }
         log.info("=>> 身份认证通过");
         return new SimpleAuthenticationInfo(user, token, getName());

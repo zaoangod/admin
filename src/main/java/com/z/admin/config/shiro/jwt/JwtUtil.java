@@ -1,11 +1,11 @@
-package com.z.admin.config.jwt;
+package com.z.admin.config.shiro.jwt;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.z.admin.config.authentication.Constant;
+import com.z.admin.config.shiro.Constant;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Date;
@@ -39,7 +39,8 @@ public class JwtUtil {
             // 效验TOKEN
             DecodedJWT jwt = verifier.verify(token);
             return true;
-        } catch (Exception exception) {
+        } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
@@ -72,6 +73,13 @@ public class JwtUtil {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static void main(String[] args) {
+        Date date = new Date(System.currentTimeMillis());
+        log.info("{}", date);
+        date = new Date(System.currentTimeMillis() + EXPIRE_TIME);
+        log.info("{}", date);
     }
 
 }

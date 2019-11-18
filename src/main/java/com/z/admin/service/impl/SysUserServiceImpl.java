@@ -4,6 +4,7 @@ import com.z.admin.mapper.ISysUserMapper;
 import com.z.admin.model.SysUser;
 import com.z.admin.service.ISysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

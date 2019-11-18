@@ -1,6 +1,6 @@
 package com.z.admin.controller;
 
-import com.z.admin.config.jwt.JwtUtil;
+import com.z.admin.config.shiro.jwt.JwtUtil;
 import com.z.admin.model.SysUser;
 import com.z.admin.service.ISysUserService;
 import com.z.admin.util.AjaxResult;
